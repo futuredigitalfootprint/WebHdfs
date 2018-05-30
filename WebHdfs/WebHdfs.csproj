@@ -13,6 +13,7 @@
     <PackageTags>HDFS</PackageTags>
     <PackageReleaseNotes>v0.3.0 - added .NetStandard 2.0 support
 v0.1.2 - fixed 404 response handling</PackageReleaseNotes>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/justmara/WebHdfs/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
   <ItemGroup>
