@@ -51,7 +51,7 @@ namespace WebHdfs
 		/// The default implementation returns "/user/$USER/". 
 		/// </summary>
 		/// <returns></returns>
-		Task GetHomeDirectory();
+		Task<string> GetHomeDirectory();
 
 		/// <summary>
 		/// Return the ContentSummary of a given Path

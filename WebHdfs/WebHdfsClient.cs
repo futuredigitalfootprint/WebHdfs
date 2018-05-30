@@ -121,7 +121,7 @@ namespace WebHdfs
         /// The default implementation returns "/user/$USER/". 
         /// </summary>
         /// <returns></returns>
-        public async Task GetHomeDirectory()
+        public async Task<string> GetHomeDirectory()
         {
             if (string.IsNullOrEmpty(HomeDirectory))
             {
@@ -130,9 +130,11 @@ namespace WebHdfs
                 if (response.IsSuccessStatusCode)
                 {
                     JObject path = await response.Content.ReadAsAsync<JObject>();
-                    HomeDirectory = path.Value<string>("Path");
+                    return HomeDirectory = path.Value<string>("Path");
                 }
+				throw new Exception("Unable to retrieve Home Directory");
             }
+	        return HomeDirectory;
         }
 
         /// <summary>

@@ -6,189 +6,191 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
+using Xunit;
 
 namespace WebHdfs.Test
 {
-    [TestFixture]
 	public class Integration
 	{
 		private const string BASE_URL = "http://test.me/plz/";
 		private const string USER = "hdfs";
-        private const string TEST_FILE = "test.txt";
-        private const string BOOL_RESULT = "{ \"boolean\" : true }";
+		private const string TEST_FILE = "test.txt";
+		private const string BOOL_RESULT = "{ \"boolean\" : true }";
 
-        [Test]
-		public void GetStatus()
+		[Fact]
+		public async Task GetStatus()
 		{
-			var path = "/path/to/file";
-			CallClient(c => c.GetFileStatus(path).Wait(), HttpMethod.Get, path, "GETFILESTATUS");
+			const string path = "/path/to/file";
+			await CallClient(c => c.GetFileStatus(path), HttpMethod.Get, path, "GETFILESTATUS");
 		}
 
-		[Test]
-		public void CreateDirectory()
+		[Fact]
+		public async Task CreateDirectory()
 		{
-			var path = "/path/to/file";
-			CallClient(c => c.CreateDirectory(path).Wait(), HttpMethod.Put, path, "MKDIRS");
+			const string path = "/path/to/file";
+			await CallClient(c => c.CreateDirectory(path), HttpMethod.Put, path, "MKDIRS");
+		}
+		
+		[Fact]
+		public async Task CreateFile()
+		{
+			if (!File.Exists(TEST_FILE))
+				using (File.Create(TEST_FILE)){ }
+			const string path = "/path/to/file";
+			await CallClient(c => c.CreateFile(TEST_FILE, path), HttpMethod.Put, path, "CREATE");
+			await CallClient(c => c.CreateFile(TEST_FILE, path, CancellationToken.None), HttpMethod.Put, path, "CREATE");
+			await CallClient(c => c.CreateFile(File.OpenRead(TEST_FILE), path), HttpMethod.Put, path, "CREATE");
+			await CallClient(c => c.CreateFile(File.OpenRead(TEST_FILE), path, CancellationToken.None), HttpMethod.Put, path, "CREATE");
 		}
 
-        [Test]
-        public void CreateFile()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.CreateFile(TEST_FILE, path).Wait(), HttpMethod.Put, path, "CREATE");
-            CallClient(c => c.CreateFile(TEST_FILE, path, CancellationToken.None).Wait(), HttpMethod.Put, path, "CREATE");
-            CallClient(c => c.CreateFile(File.OpenRead(TEST_FILE), path).Wait(), HttpMethod.Put, path, "CREATE");
-            CallClient(c => c.CreateFile(File.OpenRead(TEST_FILE), path, CancellationToken.None).Wait(), HttpMethod.Put, path, "CREATE");
-        }
-
-        [Test]
-        public void DeleteDirectory()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.DeleteDirectory(path).Wait(), HttpMethod.Delete, path, "DELETE");
-        }
-
-        [Test]
-        public void GetContentSummary()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.GetContentSummary(path).Wait(), HttpMethod.Get, path, "GETCONTENTSUMMARY");
-        }
-
-        [Test]
-        public void GetDirectoryStatus()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.GetDirectoryStatus(path).Wait(), HttpMethod.Get, path, "LISTSTATUS", "{\"FileStatuses\":{\"FileStatus\":[{ \"accessTime\":0,\"blockSize\":0,\"childrenNum\":4,\"fileId\":308665,\"group\":\"hdfs\",\"length\":0,\"modificationTime\":1429776977330,\"owner\":\"hdfs\",\"pathSuffix\":\"hdfs\",\"permission\":\"755\",\"replication\":0,\"type\":\"DIRECTORY\"}]}}");
-        }
-
-        [Test]
-        public void GetFileChecksum()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.GetFileChecksum(path).Wait(), HttpMethod.Get, path, "GETFILECHECKSUM");
-        }
-
-        [Test]
-        public void GetFileStatus()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.GetFileStatus(path).Wait(), HttpMethod.Get, path, "GETFILESTATUS");
-        }
-
-        [Test]
-        public void GetHomeDirectory()
-        {
-            var path = "/";
-            CallClient(c => c.GetHomeDirectory().Wait(), HttpMethod.Get, path, "GETHOMEDIRECTORY");
-        }
-
-        [Test]
-        public void OpenFile()
-        {
-            var path = "/path/to/file";
-            CallClient(c => c.OpenFile(path, CancellationToken.None).Wait(), HttpMethod.Get, path, "OPEN");
-            CallClient(c => c.OpenFile(path, CancellationToken.None).Wait(), HttpMethod.Get, path, "OPEN");
-        }
-
-        [Test]
-        public void RenameDirectory()
-        {
-            var path = "/path/to/file";
-            var newPath = path + "-new";
-            CallClient(c => c.RenameDirectory(path, newPath).Wait(), HttpMethod.Put, path, "RENAME&destination=" + newPath, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetAccessTime()
-        {
-            var path = "/path/to/file";
-            var time = "123";
-            CallClient(c => c.SetAccessTime(path, time).Wait(), HttpMethod.Put, path, "SETTIMES&accesstime=" + time, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetGroup()
-        {
-            var path = "/path/to/file";
-            var param = "123";
-            CallClient(c => c.SetGroup(path, param).Wait(), HttpMethod.Put, path, "SETOWNER&group=" + param, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetModificationTime()
-        {
-            var path = "/path/to/file";
-            var param = "123";
-            CallClient(c => c.SetModificationTime(path, param).Wait(), HttpMethod.Put, path, "SETTIMES&modificationtime=" + param, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetOwner()
-        {
-            var path = "/path/to/file";
-            var param = "123";
-            CallClient(c => c.SetOwner(path, param).Wait(), HttpMethod.Put, path, "SETOWNER&owner=" + param, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetPermissions()
-        {
-            var path = "/path/to/file";
-            var param = "123";
-            CallClient(c => c.SetPermissions(path, param).Wait(), HttpMethod.Put, path, "SETPERMISSION&permission=" + param, BOOL_RESULT);
-        }
-
-        [Test]
-        public void SetReplicationFactor()
-        {
-            var path = "/path/to/file";
-            var param = 100;
-            CallClient(c => c.SetReplicationFactor(path, param).Wait(), HttpMethod.Put, path, "SETREPLICATION&replication=" + param, BOOL_RESULT);
-        }
-
-        [Test]
-        public void GetEmptyResult()
-        {
-            var path = "/path/to/file";
-            CallClient(async c =>
-                {
-                    var file = await c.GetFileStatus(path);
-                    Assert.IsNull(file);
-                }, HttpMethod.Get, path, "GETFILESTATUS", status: HttpStatusCode.NotFound);
-        }
-
-        private void CallClient(Action<WebHdfsClient> caller, HttpMethod method, string url, string operation, string result = "{}", HttpStatusCode status = HttpStatusCode.OK)
+		[Fact]
+		public async Task DeleteDirectory()
 		{
-			var handler = new Mock<FakeHttpMessageHandler>();
-			handler.CallBase = true;
+			const string path = "/path/to/file";
+			await CallClient(c => c.DeleteDirectory(path), HttpMethod.Delete, path, "DELETE");
+		}
 
-            Expression<Func<FakeHttpMessageHandler, HttpResponseMessage>> homeCall = t => t.Send(It.Is<HttpRequestMessage>(
-                            msg =>
-                               msg.Method == HttpMethod.Get &&
-                               msg.RequestUri.ToString() == "http://test.me/plz/webhdfs/v1/?user.name=hdfs&op=GETHOMEDIRECTORY"));
+		[Fact]
+		public async Task GetContentSummary()
+		{
+			const string path = "/path/to/file";
+			await CallClient(c => c.GetContentSummary(path), HttpMethod.Get, path, "GETCONTENTSUMMARY");
+		}
 
-            handler.Setup(homeCall)
-                   .Returns(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"Path\":\"/user/hdfs\"}", System.Text.Encoding.UTF8, "application/json") })
-                   .Verifiable();
+		[Fact]
+		public async Task GetDirectoryStatus()
+		{
+			const string path = "/path/to/file";
+			await CallClient(c => c.GetDirectoryStatus(path), HttpMethod.Get, path, "LISTSTATUS", "{\"FileStatuses\":{\"FileStatus\":[{ \"accessTime\":0,\"blockSize\":0,\"childrenNum\":4,\"fileId\":308665,\"group\":\"hdfs\",\"length\":0,\"modificationTime\":1429776977330,\"owner\":\"hdfs\",\"pathSuffix\":\"hdfs\",\"permission\":\"755\",\"replication\":0,\"type\":\"DIRECTORY\"}]}}");
+		}
+
+		[Fact]
+		public async Task GetFileChecksum()
+		{
+			const string path = "/path/to/file";
+			await CallClient(c => c.GetFileChecksum(path), HttpMethod.Get, path, "GETFILECHECKSUM");
+		}
+
+		[Fact]
+		public async Task GetFileStatus()
+		{
+			const string path = "/path/to/file";
+			await CallClient(c => c.GetFileStatus(path), HttpMethod.Get, path, "GETFILESTATUS");
+		}
+
+		[Fact]
+		public async Task GetHomeDirectory()
+		{
+			const string path = "/";
+			await CallClient(c => c.GetHomeDirectory(), HttpMethod.Get, path, "GETHOMEDIRECTORY");
+		}
+
+		[Fact]
+		public async Task OpenFile()
+		{
+			const string path = "/path/to/file";
+			await CallClient(c => c.OpenFile(path, CancellationToken.None), HttpMethod.Get, path, "OPEN");
+			await CallClient(c => c.OpenFile(path, CancellationToken.None), HttpMethod.Get, path, "OPEN");
+		}
+
+		[Fact]
+		public async Task RenameDirectory()
+		{
+			const string path = "/path/to/file";
+			const string newPath = path + "-new";
+			await CallClient(c => c.RenameDirectory(path, newPath), HttpMethod.Put, path, "RENAME&destination=" + newPath, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetAccessTime()
+		{
+			const string path = "/path/to/file";
+			const string time = "123";
+			await CallClient(c => c.SetAccessTime(path, time), HttpMethod.Put, path, "SETTIMES&accesstime=" + time, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetGroup()
+		{
+			const string path = "/path/to/file";
+			const string param = "123";
+			await CallClient(c => c.SetGroup(path, param), HttpMethod.Put, path, "SETOWNER&group=" + param, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetModificationTime()
+		{
+			const string path = "/path/to/file";
+			const string param = "123";
+			await CallClient(c => c.SetModificationTime(path, param), HttpMethod.Put, path, "SETTIMES&modificationtime=" + param, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetOwner()
+		{
+			const string path = "/path/to/file";
+			const string param = "123";
+			await CallClient(c => c.SetOwner(path, param), HttpMethod.Put, path, "SETOWNER&owner=" + param, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetPermissions()
+		{
+			const string path = "/path/to/file";
+			const string param = "123";
+			await CallClient(c => c.SetPermissions(path, param), HttpMethod.Put, path, "SETPERMISSION&permission=" + param, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task SetReplicationFactor()
+		{
+			const string path = "/path/to/file";
+			const int param = 100;
+			await CallClient(c => c.SetReplicationFactor(path, param), HttpMethod.Put, path, "SETREPLICATION&replication=" + param, BOOL_RESULT);
+		}
+
+		[Fact]
+		public async Task GetEmptyResult()
+		{
+			const string path = "/path/to/file";
+			await CallClient(async c =>
+				{
+					var file = await c.GetFileStatus(path);
+					Assert.Null(file);
+					return file;
+				}, HttpMethod.Get, path, "GETFILESTATUS", status: HttpStatusCode.NotFound);
+		}
+
+		private static async Task<TResult> CallClient<TResult>(Func<WebHdfsClient, Task<TResult>> caller, HttpMethod method, string url, string operation, string result = "{}", HttpStatusCode status = HttpStatusCode.OK)
+		{
+			var handler = new Mock<FakeHttpMessageHandler> { CallBase = true };
+
+			Expression<Func<FakeHttpMessageHandler, HttpResponseMessage>> homeCall = t => t.Send(It.Is<HttpRequestMessage>(
+							msg =>
+							   msg.Method == HttpMethod.Get &&
+							   msg.RequestUri.ToString() == "http://test.me/plz/webhdfs/v1/?user.name=hdfs&op=GETHOMEDIRECTORY"));
+
+			handler.Setup(homeCall)
+				   .Returns(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"Path\":\"/user/hdfs\"}", System.Text.Encoding.UTF8, "application/json") })
+				   .Verifiable();
 
 
-            if (!operation.StartsWith("GETHOMEDIRECTORY", StringComparison.OrdinalIgnoreCase))
-            {
-                Expression<Func<FakeHttpMessageHandler, HttpResponseMessage>> innerCall = t => t.Send(It.Is<HttpRequestMessage>(
-                    msg =>
-                        msg.Method == method &&
-                        msg.RequestUri.ToString().StartsWith(BASE_URL + WebHdfsClient.PREFIX + url + "?user.name=" + USER + "&op=" + operation, StringComparison.OrdinalIgnoreCase)));
+			if (!operation.StartsWith("GETHOMEDIRECTORY", StringComparison.OrdinalIgnoreCase))
+			{
+				Expression<Func<FakeHttpMessageHandler, HttpResponseMessage>> innerCall = t => t.Send(It.Is<HttpRequestMessage>(
+					msg =>
+						msg.Method == method &&
+						msg.RequestUri.ToString().StartsWith(BASE_URL + WebHdfsClient.PREFIX + url + "?user.name=" + USER + "&op=" + operation, StringComparison.OrdinalIgnoreCase)));
 
-                handler.Setup(innerCall)
-                        .Returns(new HttpResponseMessage(status) { Content = new StringContent(result, System.Text.Encoding.UTF8, "application/json") })
-                        .Verifiable();
-            }
+				handler.Setup(innerCall)
+						.Returns(new HttpResponseMessage(status) { Content = new StringContent(result, System.Text.Encoding.UTF8, "application/json") })
+						.Verifiable();
+			}
 
-            var client = new WebHdfsClient(handler.Object, BASE_URL, USER);
-			caller(client);
+			var client = new WebHdfsClient(handler.Object, BASE_URL, USER);
+			var response = await caller(client);
 			handler.Verify();
+			return response;
 		}
 
 		public class FakeHttpMessageHandler : HttpMessageHandler
